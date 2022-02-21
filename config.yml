@@ -1,0 +1,11 @@
+mbit:
+  server:
+    port: 8080
+  arbitrage1:
+    websocket-api:
+      endpoint: wss://stream.binance.com:9443
+      path: /stream?streams= <streamName1>/<streamName2>/<streamName3>
+  arbitrage2:
+    websocket-api:
+      endpoint:
+      path:
