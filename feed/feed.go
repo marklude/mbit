@@ -3,9 +3,9 @@ package feed
 import (
 	"context"
 
+	"github.com/marklude/logger"
 	"github.com/marklude/mbit/datastore"
 	"github.com/marklude/mbit/exchange"
-	"github.com/marklude/mbit/logger"
 )
 
 type feed struct {

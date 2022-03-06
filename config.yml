@@ -7,5 +7,5 @@ mbit:
       path: /stream?streams= <streamName1>/<streamName2>/<streamName3>
   arbitrage2:
     websocket-api:
-      endpoint:
+      endpoint: wss://ws.cex.io/ws
       path:
