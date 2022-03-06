@@ -23,12 +23,16 @@ func init() {
 }
 
 func executeStartCmd(cmd *cobra.Command, args []string) {
-
+	//initialize logger
 	l := logger.NewLogger(os.Getenv("ENV"), os.Getenv("ELK"))
+
+	//initialize first arbitrage
 	arbitrage1, err := exchange.NewBinanceWSClient(context.Background(), os.Getenv("BinanceApiKey"), os.Getenv("BinanceSecretKey"))
 	if err != nil {
 		errors.Wrap(err, "New binance websocket client")
 	}
+
+	//initialize feed
 	feeder := feed.NewFeed(context.Background(), feed.WithLogger(l), feed.WithBinance(arbitrage1))
 	feeder.Start()
 }
