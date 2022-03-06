@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/adshao/go-binance/v2"
-	"github.com/marklude/mbit/logger"
+	"github.com/marklude/logger"
 )
 
 const (
