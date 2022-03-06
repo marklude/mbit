@@ -4,9 +4,9 @@ import (
 	"context"
 	"os"
 
+	"github.com/marklude/logger"
 	"github.com/marklude/mbit/exchange"
 	"github.com/marklude/mbit/feed"
-	"github.com/marklude/mbit/logger"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )
@@ -24,7 +24,7 @@ func init() {
 
 func executeStartCmd(cmd *cobra.Command, args []string) {
 
-	l := logger.NewLogger(os.Getenv("ENV"), os.Getenv("ELK"))
+	l := logger.NewLogger(os.Getenv("ENV"))
 	arbitrage1, err := exchange.NewBinanceWSClient(context.Background(), os.Getenv("BinanceApiKey"), os.Getenv("BinanceSecretKey"))
 	if err != nil {
 		errors.Wrap(err, "New binance websocket client")
