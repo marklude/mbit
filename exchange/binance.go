@@ -17,21 +17,21 @@ const (
 type binanceWrapper struct {
 	ctx    context.Context
 	api    *binance.Client
-	logger logger.Logger
+	logger *logger.Logger
 }
 
 type Binance interface {
 	GetPrice() (float64, error)
 }
 
-func NewBinanceWSClient(ctx context.Context, apiKey, secretKey string) (Binance, error) {
+func NewBinanceWSClient(ctx context.Context, apiKey, secretKey string) Binance {
 	binance.UseTestnet = true
 	client := binance.NewClient(apiKey, secretKey)
 	client.NewServerTimeService().Do(context.Background())
 	return &binanceWrapper{
 		ctx: ctx,
 		api: client,
-	}, nil
+	}
 }
 
 func (b *binanceWrapper) GetPrice() (price float64, err error) {

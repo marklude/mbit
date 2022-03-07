@@ -1,6 +1,10 @@
 package exchange
 
 import (
+	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"os"
@@ -19,13 +23,24 @@ type cex struct {
 	logger    logger.Logger
 }
 
+type authentication struct {
+	E    string `json:"e"`
+	Auth *auth  `json:"auth"`
+}
+
+type auth struct {
+	Key       string `json:"key"`
+	Signature string `json:"signature"`
+	Timestamp int64  `json:"timestamp"`
+}
+
 type Ticker struct {
-	Timestamp string `json:"timestamp"`
-	Low       string `json:"low"`
+	E    string   `json:"e"`
+	Data []string `json:"data"`
 }
 
 type Cex interface {
-	getTicker()
+	GetTicker()
 }
 
 func NewCex(apiKey, secretKey, url string) Cex {
@@ -41,7 +56,7 @@ func NewCex(apiKey, secretKey, url string) Cex {
 
 }
 
-func (c *cex) getTicker() {
+func (c *cex) GetTicker() {
 
 	interrupt := make(chan os.Signal, 1)
 	signal.Notify(interrupt, os.Interrupt)
@@ -50,41 +65,63 @@ func (c *cex) getTicker() {
 	wsocket, _, err := c.ws.Dial(c.wsURL, nil)
 
 	if err != nil {
-		c.logger.Error("cex getticker", err)
+		c.logger.Error(err)
+	}
+	timestamp := time.Now().Unix()
+	h := hmac.New(sha256.New, []byte(c.secretKey))
+	h.Write([]byte(fmt.Sprintf("%d%s", timestamp, c.apiKey)))
+	sha := hex.EncodeToString(h.Sum(nil))
+
+	newAuth := &auth{Key: c.apiKey, Signature: sha, Timestamp: timestamp}
+	newAuthentication := &authentication{E: "auth", Auth: newAuth}
+
+	jsonData, err := json.Marshal(newAuthentication)
+	if err != nil {
+		c.logger.Error(err)
 	}
 
 	defer wsocket.Close()
 
 	go func() {
 		defer close(done)
+
+		err = wsocket.WriteMessage(websocket.TextMessage, jsonData)
+		if err != nil {
+			c.logger.Error(err)
+		}
 		for {
 			_, message, err := wsocket.ReadMessage()
 			if err != nil {
-				c.logger.Error("read message", err)
+				c.logger.Error(err)
 				return
 			}
-			c.logger.Info("received %s :", message)
+			c.logger.Info(string(message))
 		}
 	}()
 
-	ticker := time.NewTicker(time.Second)
+	ticker := time.NewTicker(10 * time.Second)
 	defer ticker.Stop()
 
 	for {
 		select {
 		case <-done:
 			return
-		case t := <-ticker.C:
-			err := wsocket.WriteMessage(websocket.TextMessage, []byte(t.String()))
+		case <-ticker.C:
+			jsonTickerData, err := json.Marshal(&Ticker{E: "ticker", Data: []string{"BNB", "USD"}})
 			if err != nil {
-				c.logger.Error("write message error", err)
+				c.logger.Error(err)
+				return
+			}
+			err = wsocket.WriteMessage(websocket.TextMessage, jsonTickerData)
+			if err != nil {
+				c.logger.Error(err)
 				return
 			}
 		case <-interrupt:
 			fmt.Println("Interrupted...")
 			err := wsocket.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""))
 			if err != nil {
-				c.logger.Error("interrupted websocket", err)
+				c.logger.Error(err)
 				return
 			}
 			select {

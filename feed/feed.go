@@ -10,9 +10,10 @@ import (
 
 type feed struct {
 	ctx     context.Context
-	logger  logger.Logger
+	logger  *logger.Logger
 	binance exchange.Binance
 	redis   datastore.Redis
+	cex     exchange.Cex
 }
 
 type options func(*feed)
@@ -29,7 +30,7 @@ func (fd *feed) WithOptions(opts ...options) {
 	}
 }
 
-func WithLogger(l logger.Logger) options {
+func WithLogger(l *logger.Logger) options {
 	return func(f *feed) {
 		f.logger = l
 	}
@@ -38,6 +39,12 @@ func WithLogger(l logger.Logger) options {
 func WithBinance(b exchange.Binance) options {
 	return func(f *feed) {
 		f.binance = b
+	}
+}
+
+func WithCex(c exchange.Cex) options {
+	return func(f *feed) {
+		f.cex = c
 	}
 }
 
@@ -51,8 +58,11 @@ func (fd *feed) Start() {
 	fd.logger.Info("Starting feeder...")
 	defer fd.logger.Info("Stopping feeder...")
 
-	//init feeders
+	//initialize binance feeders
 	go fd.binance.GetPrice()
+
+	//initialize cex feeder
+	go fd.cex.GetTicker()
 
 	<-fd.ctx.Done()
 
