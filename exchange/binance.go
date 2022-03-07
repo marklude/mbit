@@ -17,7 +17,7 @@ const (
 type binanceWrapper struct {
 	ctx    context.Context
 	api    *binance.Client
-	logger *logger.Logger
+	logger logger.Logger
 }
 
 type Binance interface {
